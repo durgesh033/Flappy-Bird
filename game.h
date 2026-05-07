@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 using namespace sf;
 using namespace std;
 
@@ -29,6 +30,18 @@ class Game{
     Text titleText;
     Text menuText;
     Text gameOverText;
+
+    Texture backgroundTexture;
+    Sprite backgroundSprite;
+
+    Texture menuBackgroundTexture;
+    Sprite menuBackgroundSprite;
+
+    SoundBuffer pointBuffer;
+    Sound pointSound;
+    SoundBuffer hitBuffer;
+    Sound hitSound;
+
 
     Clock clock;
     int score;

@@ -1,191 +1,340 @@
+
 #include "Game.h"
-#include <optional>
 #include <vector>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 
 using namespace sf;
 using namespace std;
 
-Game::Game() 
-    : window(VideoMode({800, 600}), "Flappy Bird") // Create game window size of 800 x 600 with name Flappy Bird
-{
-    currentState = GameState::MENU; // game starts at menu screen
+Game::Game()
+    : window(VideoMode(800, 600), "Flappy Bird"){
+    currentState = GameState::MENU;
     score = 0;
-    difficulty = 2; // default difficult is medium
+    difficulty = 2;
     selectedOption = 0;
-    font.openFromFile("Fonts/Font.ttf");
-    titleText = Text(font, "FLAPPY BIRD", 48);
 
-    menuText = Text(font, "> EASY\n MEDIUM \n HARD\n\n PRESS ENTER TO START", 28);
-
-    scoreText = Text(font, "Score: 0", 30);
-
-    gameOverText = Text(
-        font,
-        "GAME OVER\n Press R to Restart",
-        36
+    backgroundTexture.loadFromFile("Graphics/background.png");
+    backgroundSprite.setTexture(backgroundTexture);
+    backgroundSprite.setScale(
+    800.0f / static_cast<float>(backgroundTexture.getSize().x),
+    600.0f / static_cast<float>(backgroundTexture.getSize().y)
     );
 
-    titleText.setPosition(Vector2f(220, 100));
-    menuText.setPosition(Vector2f(180, 220));
-    scoreText.setPosition(Vector2f(20, 20));
-    gameOverText.setPosition(Vector2f(180, 250));
+    menuBackgroundTexture.loadFromFile("Graphics/menu-background.jpg");
+    menuBackgroundSprite.setTexture(menuBackgroundTexture);
+    menuBackgroundSprite.setScale(
+    800.0f / static_cast<float>(menuBackgroundTexture.getSize().x),
+    600.0f / static_cast<float>(menuBackgroundTexture.getSize().y)
+    );
+
+    pointBuffer.loadFromFile("Sounds/point.ogg");
+    pointSound.setBuffer(pointBuffer);
+
+    hitBuffer.loadFromFile("Sounds/die.ogg");
+    hitSound.setBuffer(hitBuffer);
+
+    font.loadFromFile("Fonts/Font.ttf");
+
+    titleText.setFont(font);
+    titleText.setString("FLAPPY BIRD");
+    titleText.setCharacterSize(48);
+
+    menuText.setFont(font);
+    menuText.setString("> EASY\n MEDIUM\n HARD\n\n PRESS ENTER TO START");
+    menuText.setCharacterSize(28);
+
+    scoreText.setFont(font);
+    scoreText.setCharacterSize(30);
+    scoreText.setFillColor(Color::White);
+    scoreText.setOutlineThickness(3.f);
+    scoreText.setOutlineColor(Color::Black);
+    scoreText.setStyle(Text::Bold);
+
+    gameOverText.setFont(font);
+    gameOverText.setString("GAME OVER\nPress R to Restart");
+    gameOverText.setCharacterSize(36);
+
+    titleText.setPosition(220.0f, 100.0f);
+    menuText.setPosition(180.0f, 220.0f);
+    scoreText.setPosition(20.0f, 20.0f);
+    gameOverText.setPosition(180.0f, 250.0f);
 
     bird.loadBird();
+
     initializePipes();
-    
 }
 
-
 // Game Loop
-// Input -> Render -> Update -> Repeat
+// Input -> Update -> Render -> Repeat
+
 void Game::run(){
-    while (window.isOpen()) { 
-        float deltaTime = clock.restart().asSeconds(); // return the elasped time and convert time into float seconds
+    while(window.isOpen())
+    {
+        float deltaTime = clock.restart().asSeconds();
         processEvent();
         update(deltaTime);
         render();
-
     }
 }
 
 void Game::processEvent(){
-    while(const optional event = window.pollEvent()) { // this continously checks the window event
-        if (event ->is<Event::Closed.()){
+    Event event;
+    while(window.pollEvent(event))
+    {
+        if(event.type == Event::Closed)
+        {
             window.close();
         }
+        // MENU STATE
 
-        /*
-        1. Check if event is keyboard press
-        2. Get keyboard event data
-        3. Check which key was pressed
-        4. Execute logic
-        */
+        if(currentState == GameState::MENU) {
+            if(event.type == Event::KeyPressed){
+                if(event.key.code == Keyboard::Up){
+                    selectedOption--;
 
-        if (currentState == GameState::MENU) {
-          if ( event -> is<Event :: KeyPressed>()){ // Triggers Once per actual key press
-            const auto* keyEvent = event->getIf<Event::KeyPressed>(); 
-            // basically it is does this event currently contain a Keypressed event
-            // if yes return pointer to it if no then return nullptr
-            // auto == compilier automatically figures out what type 
-            // const == no modify event data means always constant
-
-            if (keyEvent ->code == Keyboard::Key::Up){
-                // means was the up key pressed 
-                selectedOption --;
-
-                if (selectedOption < 0){
-                    selectedOption = 2;
-                }
-            }
-            if (keyEvent -> code == Keyboard::Key::Down){
-                selectedOption ++;
-
-                if (selectedOption > 2) {
-                    selectedOption = 0;
-                }
-            }
-
-            if (keyEvent -> code == Keyboard::Key::Enter) {
-                difficulty = selectedOption;
-
-                if(difficulty == 0) {
-                    for(auto& pipe : pipes) {
-                        pipe.setGapSize(220.0f);
-                        pipe.setMoveSpeed(200.0f);
+                    if(selectedOption < 0){
+                        selectedOption = 2;
                     }
                 }
 
-                else if(difficulty == 1) {
-                    for(auto& pipe : pipes){
-                        pipe.setGapSize(180.0f);
-                        pipe.setMoveSpeed(250.0f);
+                if(event.key.code == Keyboard::Down) {
+                    selectedOption++;
+
+                    if(selectedOption > 2) {
+                        selectedOption = 0;
                     }
                 }
 
-                else if(difficulty == 2) {
-                    for(auto& pipe : pipes) {
-                        pipe.setGapSize(140.0f);
-                        pipe.setMoveSpeed(320.0f);
+                if(event.key.code == Keyboard::Enter) {
+                    difficulty = selectedOption;
+
+                    if(difficulty == 0){
+                        for(auto& pipe : pipes){
+                            pipe.setGapSize(220.0f);
+                            pipe.setMoveSpeed(200.0f);
+                        }
                     }
+
+                    else if(difficulty == 1) {
+                        for(auto& pipe : pipes) {
+                            pipe.setGapSize(180.0f);
+                            pipe.setMoveSpeed(250.0f);
+                        }
+                    }
+
+                    else if(difficulty == 2) {
+                        for(auto& pipe : pipes) {
+                            pipe.setGapSize(140.0f);
+                            pipe.setMoveSpeed(320.0f);
+                        }
+                    }
+
+                    currentState = GameState::READY;
                 }
-
-                // auto& pipe : pipes means go through the all pipe present inside the vector pipes similar to python loop context
-
-                currentState = GameState::READY;
-            }
-          }
-    }
-
-    // Change the game from menu to playing state and start the game
-
-    else if(currentState == GameState::READY) {
-        if ( event -> is <Event::KeyPressed>()){
-            const auto* keyEvent = event -> getIf<Event::KeyPressed>();
-
-            if (keyEvent -> code == Keyboard::Key::Space) {
-                currentState = GameState::PLAYING;
-
-                bird.jump();
             }
         }
-    }
-    // Space use for jump
 
-    else if(currentState == GameState::PLAYING){
-        if (event -> is <Event::KeyPressed>()){
-            const auto* keyEvent = event -> getIf<Event::KeyPressed>();
+        // READY STATE
 
-            if (keyEvent -> code == Keyboard::Key::Space) {
-                bird.jump();
+        else if(currentState == GameState::READY){
+            if(event.type == Event::KeyPressed){
+                if(event.key.code == Keyboard::Space){
+                    currentState = GameState::PLAYING;
+
+                    bird.jump();
+                }
             }
         }
-    }
 
-    // R use for restart
-    
-    else if(currentState == GameState::GAME_OVER) {
-        if (event -> is <Event::KeyPressed>()) {
-            const auto* keyEvent = event ->getIf<Event::KeyPressed>();
+        // PLAYING STATE
 
-            if (keyEvent -> code == Keyboard::Key::R){
-                restartGame();
+        else if(currentState == GameState::PLAYING){
+            if(event.type == Event::KeyPressed) {
+                if(event.key.code == Keyboard::Space) {
+                    bird.jump();
+                }
+            }
+        }
+
+        // GAME OVER STATE
+
+        else if(currentState == GameState::GAME_OVER){
+            if(event.type == Event::KeyPressed) {
+                if(event.key.code == Keyboard::R){
+                    restartGame();
+                }
             }
         }
     }
 }
-}
 
-void Game::update(float deltaTime) {
+void Game::update(float deltaTime){
+    if(currentState == GameState::PLAYING){
+        bird.updateBird(deltaTime);
 
+        for(auto& pipe : pipes){
+            pipe.updatePipe(deltaTime);
+
+            if(pipe.isOffScreen()) {
+                pipe.resetPipe(1000.0f);
+            }
+        }
+
+        checkCollisions();
+        updateScore();
+    }
 }
 
 void Game::render(){
+    window.clear();
 
+    if(currentState == GameState::MENU){
+        window.draw(menuBackgroundSprite);
+    }
+
+    else {
+        window.draw(backgroundSprite);
+    }
+
+    // MENU
+
+    if(currentState == GameState::MENU) {
+        string menuString;
+
+        if(selectedOption == 0) {
+            menuString =
+                "> EASY\n"
+                "  MEDIUM\n"
+                "  HARD\n\n"
+                "Press ENTER to Start";
+        }
+
+        else if(selectedOption == 1){
+            menuString =
+                "  EASY\n"
+                "> MEDIUM\n"
+                "  HARD\n\n"
+                "Press ENTER to Start";
+        }
+
+        else if(selectedOption == 2) {
+            menuString =
+                "  EASY\n"
+                "  MEDIUM\n"
+                "> HARD\n\n"
+                "Press ENTER to Start";
+        }
+
+        menuText.setString(menuString);
+
+        window.draw(titleText);
+        window.draw(menuText);
+    }
+
+    else
+    {
+        for(auto& pipe : pipes)
+        {
+            pipe.drawPipe(window);
+        }
+
+        bird.drawBird(window);
+
+        window.draw(scoreText);
+
+        if(currentState == GameState::GAME_OVER)
+        {
+            window.draw(gameOverText);
+        }
+    }
+
+    window.display();
 }
 
-void Game::initializePipes() {
-    pipes.clear(); // Remove all existing pipes from the vector
+void Game::initializePipes(){
+    pipes.clear();
 
-    for(int i = 0; i < 3; i++) { // Creates 3 pipe pairs
+    for(int i = 0; i < 3; i++){
         Pipe pipe;
-
         pipe.loadPipe();
-        pipe.resetPipe(900.0f + i * 300.0f); // spaced the pairs pipe
-        pipes.push_back(pipe); // add new element at the end of the vector 
-        // [pipe1] [pipe2] [pipe3]
-        // also if we call the size fun :: returns how many pipes exist
+        pipe.resetPipe(900.0f + i * 300.0f);
+        pipes.push_back(pipe);
     }
 }
 
-void Game::checkCollisions() {
+void Game::checkCollisions(){
+    for(auto& pipe : pipes){
+        if(bird.getSprite().getGlobalBounds().intersects(
+            pipe.getTopPipe().getGlobalBounds())){
+            currentState = GameState::GAME_OVER;
 
+            hitSound.play();
+        }
+
+        if(bird.getSprite().getGlobalBounds().intersects(
+            pipe.getBottomPipe().getGlobalBounds())) {
+            currentState = GameState::GAME_OVER;
+
+            hitSound.play();
+        }
+    }
+
+    if(bird.getSprite().getPosition().y < 0){
+        currentState = GameState::GAME_OVER;
+
+        hitSound.play();
+    }
+
+    if(bird.getSprite().getPosition().y > 550){
+        currentState = GameState::GAME_OVER;
+
+        hitSound.play();
+    }
 }
 
-void Game::updateScore() {
+void Game::updateScore(){
+    for(auto& pipe : pipes){
+        float pipeRightEdge =
+            pipe.getTopPipe().getPosition().x +
+            pipe.getTopPipe().getGlobalBounds().width;
 
+        if(!pipe.isScored() &&
+           bird.getSprite().getPosition().x > pipeRightEdge){
+            pointSound.play();
+            score++;
+            pipe.setScored(true);
+            scoreText.setString("Score: " + to_string(score));
+        }
+    }
 }
 
-void Game::restartGame() {
+void Game::restartGame(){
+    score = 0;
+    scoreText.setString("Score: 0");
+    bird.resetBird();
+    initializePipes();
 
+    if(difficulty == 0){
+        for(auto& pipe : pipes){
+            pipe.setGapSize(220.0f);
+            pipe.setMoveSpeed(200.0f);
+        }
+    }
+
+    else if(difficulty == 1){
+        for(auto& pipe : pipes){
+            pipe.setGapSize(180.0f);
+            pipe.setMoveSpeed(250.0f);
+        }
+    }
+
+    else if(difficulty == 2){
+        for(auto& pipe : pipes){
+            pipe.setGapSize(140.0f);
+            pipe.setMoveSpeed(320.0f);
+        }
+    }
+
+    currentState = GameState::READY;
 }

@@ -1,36 +1,53 @@
 #include "pipe.h"
 
+Texture Pipe::pipeTexture;
+
 Pipe::Pipe(){
-    positon.x = 900.0f; // slightly off the screen for smooth experience
-    positon.y = 0.0f; // top vertical edge
+    position.x = 900.0f; // slightly off the screen for smooth experience
+    position.y = 0.0f; // top vertical edge
 
     gapY = 250.0f; // default vertical opening
-    gap_size = 180.0f; // balanced difficulty
-    mSpeed = 250.0f;
+    gapSize = 140.0f; // balanced difficulty
+    moveSpeed = 250.0f;
     score = false; 
+
+    loadPipe();
 }
 
 void Pipe::loadPipe(){
-    pipeTexture.loadFromFile("Graphics/pipe-green.png");
+    pipeTexture.loadFromFile("Graphics/pipe-red.png");
+
     topPipe.setTexture(pipeTexture);
     bottomPipe.setTexture(pipeTexture);
 
-    topPipe.setRotation(degrees(180)); // rotates the top pipe
+    // Scale pipes
+    topPipe.setScale(0.5f, -4.f);
+    bottomPipe.setScale(0.5f, 4.f);
 
-    topPipe.setPosition(Vector2f(positon.x, gapY - gap_size / 2));
-    // gapy = 250, gapize = 180 == gapsize /2 = 90  250 - 90 = 160(y value)
+    // Pipe height after scaling
 
-    bottomPipe.setPosition(Vector2f(positon.x, gapY + gap_size / 2));
-    // same concept but with + sign (cause we need it from bottom so it produces high x value)
+    float pipeHeight = pipeTexture.getSize().y * 0.5f;
 
-    // from topPipe = 160 and bottomPipe = 340 and difference between them = 180 which is the gap Size
+    // TOP PIPE
+
+    topPipe.setPosition(
+        position.x,
+        gapY - gapSize / 2
+    );
+
+    // BOTTOM PIPE
+
+    bottomPipe.setPosition(
+        position.x,
+        gapY + gapSize / 2
+    );
 }
 
 void Pipe::updatePipe(float deltaTime){
-    positon.x -= mSpeed * deltaTime; // moves left side with real time
+    position.x -= moveSpeed * deltaTime; // moves left side with real time
 
-    topPipe.setPosition(Vector2f(positon.x, gapY - gap_size / 2));
-    bottomPipe.setPosition(Vector2f(positon.x, gapY + gap_size / 2));
+    topPipe.setPosition(Vector2f(position.x, gapY - gapSize / 2));
+    bottomPipe.setPosition(Vector2f(position.x, gapY + gapSize / 2));
 }
 
 void Pipe::drawPipe(RenderWindow& window){
@@ -39,12 +56,12 @@ void Pipe::drawPipe(RenderWindow& window){
 }
 
 void Pipe::resetPipe(float newX){
-    positon.x = newX; // moves pipe to the right side ex - resetPipe(1000) so now x value is 1000
+    position.x = newX; // moves pipe to the right side ex - resetPipe(1000) so now x value is 1000
     randomizeGap(); // create the new gapY
     score = false;
 
-    topPipe.setPosition(Vector2f(positon.x, gapY - gap_size / 2));
-    bottomPipe.setPosition(Vector2f(positon.x, gapY + gap_size / 2));
+    topPipe.setPosition(Vector2f(position.x, gapY - gapSize / 2));
+    bottomPipe.setPosition(Vector2f(position.x, gapY + gapSize / 2));
 }
 
 void Pipe::randomizeGap() {
@@ -52,16 +69,16 @@ void Pipe::randomizeGap() {
     // why static_cast usually rand give the int value so to convert that value to float we used that
 }
 
-Sprite Pipe::getTopPipe() {
+Sprite& Pipe::getTopPipe() {
     return topPipe;
 }
 
-Sprite Pipe::getBottomPipe() {
+Sprite& Pipe::getBottomPipe() {
     return bottomPipe;
 }
 
 bool Pipe::isOffScreen() {
-    if (positon.x + topPipe.getGlobalBounds.size.x < 0){
+    if (position.x + topPipe.getGlobalBounds().width < 0){
         // postion.x < 0 == x = -10 and width = 80 so -10 + 80 = 70 so still pipe is visible they are not outside of the screen width
         // thats why we use position + pipeWidth
         // topPipe.getGlobalBounds.size.x == pipeWidth
@@ -82,9 +99,9 @@ void Pipe::setScored(bool value){
 }
 
 void Pipe::setGapSize(float size) {
-    gap_size = size;
+    gapSize = size;
 }
 
 void Pipe::setMoveSpeed(float speed) {
-    mSpeed = speed;
+    moveSpeed = speed;
 }

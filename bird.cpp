@@ -25,6 +25,7 @@ void Bird::updateBird(float deltaTime){ // usually dt = 0.016 (60 FPS)
     velocity += gravity * deltaTime;
     position.y += velocity * deltaTime;
     birdSprite.setPosition(position);
+    animateBird(deltaTime);
 }
 
 void Bird::jump(){ 
