@@ -80,3 +80,11 @@ bool Pipe::isScored() {
 void Pipe::setScored(bool value){
     score = value;
 }
+
+void Pipe::setGapSize(float size) {
+    gap_size = size;
+}
+
+void Pipe::setMoveSpeed(float speed) {
+    mSpeed = speed;
+}

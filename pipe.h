@@ -31,6 +31,8 @@ class Pipe{
     bool isScored(); 
     
     void setScored(bool value);
+    void setGapSize(float size);
+    void setMoveSpeed(float speed);
 };
 
 #endif
