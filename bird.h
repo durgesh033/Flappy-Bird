@@ -21,6 +21,17 @@ class Bird {
 
     int animationFrame; // current flap frame
     float animationTimer; // contols when frame should switch
+
+    public:
+    Bird(); // default constructor
+    void loadBird(); // load the texture file
+    void updateBird(float deltaTime); // runs every frame
+    void jump(); // jumpStrength becomes negative when jump is pressed
+    void animateBird(float deltaTime); //switch the frame of the texture array
+    void drawBird(RenderWindow& window); // draw the bird in screen
+
+    Sprite getSprite(); // Used by game for collision detection
+    void resetBird(); // when collision detected reset the bird position
 };
 
 #endif
