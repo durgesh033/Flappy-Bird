@@ -21,28 +21,50 @@ void Bird::loadBird(){
 }
 
 // Runs every frame containing gravity, falling, movement, sprite sync
-void Bird::updateBird(float deltaTime){
+void Bird::updateBird(float deltaTime){ // usually dt = 0.016 (60 FPS)
     velocity += gravity * deltaTime;
     position.y += velocity * deltaTime;
     birdSprite.setPosition(position);
 }
 
-void Bird::jump(){
-    
+void Bird::jump(){ 
+    velocity = -jumpStrength;
 }
 
-void animateBird(float deltaTime){
+void Bird::animateBird(float deltaTime){
+    animationTimer += deltaTime; // 0.016, 0.032, 0.048
 
+    if (animationTimer >= 0.1f){ // 0.1 is balanced if i do 0.05 then animation will be too fast
+        animationFrame++; // after some time the timer become 0.1 then the frame change
+
+        if (animationFrame > 2){ // cause there are only 3 images if index out of bounds then it reset
+            animationFrame = 0;
+        }
+        birdSprite.setTexture(birdTexture[animationFrame]); 
+
+        animationTimer = 0.0f; // reset the cycle
+    }
 }
 
-void drawBird(RenderWindow& window){
-
+void Bird::drawBird(RenderWindow& window){
+    window.draw(birdSprite);
 }
 
 Sprite Bird::getSprite(){
-
+    return birdSprite;
 }
 
 void Bird::resetBird(){
+    position.x = 100.0f;
+    position.y = 300.0f;
+
+    velocity = 0.0f;
+
+    animationFrame = 0;
+    animationTimer = 0.0f;
+
+    birdSprite.setTexture(birdTexture[0]);
+    birdSprite.setPosition(position);
+
 
 }
